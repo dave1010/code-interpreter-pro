@@ -1,0 +1,31 @@
+set -e
+
+echo "Installing packages..."
+
+cd /mnt/data
+
+python -m zipfile -e /mnt/data/files.zip /mnt/data/
+
+chmod +x /mnt/data/files/*
+chmod +x /mnt/data/files/appimages/*
+
+ln -sf /mnt/data/files/* /home/sandbox/.local/bin/
+
+for appimagefile in /mnt/data/files/appimages/*.AppImage; do
+    appimagename=$(basename "$appimagefile" .AppImage)
+    appimagedir="/mnt/data/files/appimages/$appimagename"
+    mkdir -p "$appimagedir"
+    cd "$appimagedir"
+    # occasional fopen error: Permission denied errors
+    "../$(basename "$appimagefile")" --appimage-extract > /dev/null || true
+    chmod +x squashfs-root/AppRun
+    ln -sf "$appimagedir/squashfs-root/AppRun" "$HOME/.local/bin/$appimagename"
+done
+
+cd /mnt/data
+
+echo "These binaries are now available:"
+
+ls /mnt/data/files/ | grep -v appimages
+ls /mnt/data/files/appimages | grep -v AppImage
+
